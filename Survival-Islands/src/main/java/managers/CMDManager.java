@@ -18,13 +18,33 @@ public class CMDManager implements CommandExecutor {
 		return instance;
 	}
 
+	private String _label;
+	
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (!(sender instanceof Player)) {
 			sender.sendMessage("You need to be a player to execute this command!");
 			return false;
 		}
+		_label = label;
 		Player p = (Player) sender;
+		
+		if (args.length > 0) {
+			if (args[0].equalsIgnoreCase("Create") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin") || p.hasPermission("SurvivalIsland.Anywhere") || p.hasPermission("SurvivalIsland.User"))) {
+				// TODO Implement Island Creation Functionality.
+				
+			}
+			
+			if (args[0].equalsIgnoreCase("Manager") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin") || p.hasPermission("SurvivalIsland.Anywhere"))) {
+				// TODO Implement External Island Manager Access Functionality.
+				
+			}
+			
+			if (args[0].equalsIgnoreCase("Reload") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin"))) {
+				// TODO Implement Reload Functionality.
+				
+			}
+		}
 		
 		printHelp(p);
 		return false;
@@ -32,8 +52,55 @@ public class CMDManager implements CommandExecutor {
 
 	private void printHelp(Player p) {
 		String[] messages = null;
-		if (p.hasPermission("SurvivalIsland.User"))
-		chatUtil.sendMessage(p,messages, true);
+		if (p.hasPermission("SurvivalIsland.All")) {
+			messages = new String[] {
+					"&8=========[&6Survival&7-&6Islands &cHelp&8]=======",
+					"/"+_label+" Create | Creates your Survival Island.",
+					"/"+_label+" Manager | Access your manager from anywhere.",
+					"/"+_label+" Reload  | Reloads all of the configs.",
+					"&8==========================================================="
+			};
+			
+			chatUtil.sendMessage(p,messages);
+			return;
+		}
+		
+		if (p.hasPermission("SurvivalIsland.Admin")) {
+			messages = new String[] {
+					"&8=========[&6Survival&7-&6Islands &cHelp&8]=======",
+					"/"+_label+" Create | Creates your Survival Island.",
+					"/"+_label+" Manager | Access your manager from anywhere.",
+					"/"+_label+" Reload  | Reloads all of the configs.",
+					"&8==========================================================="
+			};
+			
+			chatUtil.sendMessage(p,messages);
+			return;
+		}
+		
+		if (p.hasPermission("SurvivalIsland.Manager.Anywhere")) {
+			messages = new String[] {
+					"&8=========[&6Survival&7-&6Islands &cHelp&8]=======",
+					"/"+_label+" Create | Creates your Survival Island.",
+					"/"+_label+" Manager | Access your manager from anywhere.",
+					"&8==========================================================="
+			};
+			
+			chatUtil.sendMessage(p,messages);
+			return;
+		}
+		
+		if (p.hasPermission("SurvivalIsland.User")) {
+			
+			messages = new String[] {
+					"&8=========[&6Survival&7-&6Islands &cHelp&8]=======",
+					"/"+_label+" Create | Creates your Survival Island.",
+					"&8==========================================================="
+			};
+			
+			chatUtil.sendMessage(p,messages);
+			return;
+		}
 	}
 
 }
