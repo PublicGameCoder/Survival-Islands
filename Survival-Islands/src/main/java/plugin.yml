@@ -1,0 +1,9 @@
+main: survivalislands.SurvivalIslands
+name: Survival-Islands
+version: 1.0.0
+author: PublicGameCoder
+
+commands:
+   SurvivalIsland:
+      description: The SurvivalIsland's help command!
+      permission: SurvivalIsland.User
