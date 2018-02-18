@@ -8,6 +8,7 @@ public class chatUtil {
 	private static String prefix = "&8[&6Survival&7-&6Islands&8] &7";
 
 	public static void sendMessage(Player p, String message, boolean usePrefix) {
+		message = "&7"+message;
 		if (usePrefix) {
 			message = prefix + message;
 		}
