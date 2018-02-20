@@ -15,6 +15,9 @@ public class SurvivalIslands extends JavaPlugin {
 	public void onEnable() {
 		// TODO Setting configuration
 		getCommand("SurvivalIsland").setExecutor(CMDManager.getManager());
+		getCommand("SI").setExecutor(CMDManager.getManager());
+		getCommand("SIM").setExecutor(CMDManager.getManager());
+		getCommand("SIR").setExecutor(CMDManager.getManager());
 	}
 	
 	@Override

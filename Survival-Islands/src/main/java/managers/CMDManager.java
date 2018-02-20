@@ -26,23 +26,43 @@ public class CMDManager implements CommandExecutor {
 			sender.sendMessage("You need to be a player to execute this command!");
 			return false;
 		}
+		if (label.equalsIgnoreCase("SIM")) {
+			String[] newArgs = new String[(args.length == 0)? 1 : args.length];
+			newArgs[0] = "Manager";
+			for (int i = 1; i <= args.length; i++) {
+				newArgs[i] = args[i-1];
+			}
+			args = newArgs;
+		}
+		if (label.equalsIgnoreCase("SIR")) {
+			String[] newArgs = new String[(args.length == 0)? 1 : args.length];
+			newArgs[0] = "Reload";
+			for (int i = 1; i <= args.length; i++) {
+				newArgs[i] = args[i-1];
+			}
+			args = newArgs;
+		}
+		label = "SurvivalIsland";
 		_label = label;
 		Player p = (Player) sender;
 		
 		if (args.length > 0) {
 			if (args[0].equalsIgnoreCase("Create") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin") || p.hasPermission("SurvivalIsland.Anywhere") || p.hasPermission("SurvivalIsland.User"))) {
 				// TODO Implement Island Creation Functionality.
-				
+				chatUtil.sendMessage(p, "TestMessage Create command!", true);
+				return true;
 			}
 			
 			if (args[0].equalsIgnoreCase("Manager") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin") || p.hasPermission("SurvivalIsland.Anywhere"))) {
 				// TODO Implement External Island Manager Access Functionality.
-				
+				chatUtil.sendMessage(p, "TestMessage Manager command!", true);
+				return true;
 			}
 			
 			if (args[0].equalsIgnoreCase("Reload") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin"))) {
 				// TODO Implement Reload Functionality.
-				
+				chatUtil.sendMessage(p, "TestMessage Reload command!", true);
+				return true;
 			}
 		}
 		
