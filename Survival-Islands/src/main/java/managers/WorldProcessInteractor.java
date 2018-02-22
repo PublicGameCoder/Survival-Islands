@@ -2,6 +2,10 @@ package managers;
 
 import java.io.File;
 
+import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.WorldCreator;
+
 import survivalislands.SurvivalIslands;
 
 public class WorldProcessInteractor {
@@ -9,6 +13,8 @@ public class WorldProcessInteractor {
 	private static WorldProcessInteractor instance;
 	@SuppressWarnings("unused")
 	private File schematicFolder;
+	private World voidWorldBackup;
+	private World islandWorld;
 	
 	public static WorldProcessInteractor getManager() {
 		if (instance == null) {
@@ -27,6 +33,20 @@ public class WorldProcessInteractor {
 		if (!SurvivalIslands.getInstance().getDataFolder().exists()) {
 			SurvivalIslands.getInstance().getDataFolder().mkdir();
 		}
+		
+		loadNewVoidWorld("basicIslandsWorld");
+	}
+	
+	private void loadNewVoidWorld(String worldName) {
+		if (voidWorldBackup == null) {
+			voidWorldBackup = Bukkit.createWorld(new WorldCreator("VoidWorldBackup"));
+		}
+		
+		islandWorld = Bukkit.createWorld(new WorldCreator(worldName).copy(voidWorldBackup));
+	}
+	
+	public World getIslandsWorld() {
+		return this.islandWorld;
 	}
 
 }
