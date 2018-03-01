@@ -4,6 +4,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import managers.CMDManager;
 import managers.ConfigManager;
+import managers.IslandsManager;
 import managers.PlayerStatsManager;
 import managers.WorldProcessInteractor;
 
@@ -30,11 +31,12 @@ public class SurvivalIslands extends JavaPlugin {
 		ConfigManager.getManager();
 		PlayerStatsManager.getManager();
 		WorldProcessInteractor.getManager();
+		IslandsManager.getManager();
 	}
 	
 	@Override
 	public void onDisable() {
-		// TODO Saving configuration
+		WorldProcessInteractor.getManager().deleteByDisable();
 	}
 	
 	public static SurvivalIslands getInstance() {

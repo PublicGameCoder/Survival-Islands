@@ -28,9 +28,9 @@ public class ConfigManager {
 		}
 		
 		configFile = new File(SurvivalIslands.getInstance().getDataFolder(), "config.yml");
-		if (!SurvivalIslands.getInstance().getDataFolder().exists()) {
+		if (!configFile.exists()) {
 			try {
-				SurvivalIslands.getInstance().getDataFolder().createNewFile();
+				configFile.createNewFile();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -40,6 +40,11 @@ public class ConfigManager {
 
 	private void setupConfigDefaults() {
 		// TODO create configSetup implementation
+		FileConfiguration configuration = getConfig();
+		
+		configuration.set("DefaultSchematicFile", "basicIsland");
+		
+		saveConfig(configuration);
 	}
 	
 	public FileConfiguration getConfig() {

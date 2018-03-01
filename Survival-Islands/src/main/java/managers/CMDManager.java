@@ -1,5 +1,7 @@
 package managers;
 
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -50,6 +52,12 @@ public class CMDManager implements CommandExecutor {
 			if (args[0].equalsIgnoreCase("Create") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin") || p.hasPermission("SurvivalIsland.Anywhere") || p.hasPermission("SurvivalIsland.User"))) {
 				// TODO Implement Island Creation Functionality.
 				chatUtil.sendMessage(p, "TestMessage Create command!", true);
+				boolean success = IslandsManager.getManager().loadIsland(p);
+				if (success) {
+					chatUtil.sendMessage(p, ChatColor.GRAY+"Entering island..", true);
+					Location spawnLocation = IslandsManager.getManager().getSpawnOf(p);
+					p.teleport(spawnLocation);
+				}
 				return true;
 			}
 			

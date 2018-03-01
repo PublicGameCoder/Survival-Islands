@@ -33,6 +33,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="C:/Users/mike de groot/git/Survival-Islands/Server/server.jar"/>
-	<classpathentry kind="lib" path="C:/Users/mike de groot/git/Survival-Islands/Server/plugins/AsyncWorldEdit.jar"/>
+	<classpathentry kind="lib" path="C:/Users/mike de groot/git/Survival-Islands/Server/plugins/worldedit-bukkit-6.1.7.3.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

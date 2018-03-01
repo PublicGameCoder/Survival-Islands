@@ -3,8 +3,8 @@ package managers;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -15,8 +15,9 @@ import survivalislands.SurvivalIslands;
 public class PlayerStatsManager {
 
 	private static PlayerStatsManager instance;
-	@SuppressWarnings("unused")
 	private File playerdataFolder;
+	private File islandSchematicsFolder;
+	private File playerSchematicsFolder;
 	
 	public static PlayerStatsManager getManager() {
 		if (instance == null) {
@@ -33,7 +34,17 @@ public class PlayerStatsManager {
 		
 		playerdataFolder = new File(SurvivalIslands.getInstance().getDataFolder(), "playerdata");
 		if (!SurvivalIslands.getInstance().getDataFolder().exists()) {
-			SurvivalIslands.getInstance().getDataFolder().mkdir();
+			playerdataFolder.mkdir();
+		}
+		
+		islandSchematicsFolder = new File(SurvivalIslands.getInstance().getDataFolder(), "islandSchematics");
+		if (!islandSchematicsFolder.exists()) {
+			islandSchematicsFolder.mkdir();
+		}
+		
+		playerSchematicsFolder = new File(SurvivalIslands.getInstance().getDataFolder(), "playerIslands");
+		if (!playerSchematicsFolder.exists()) {
+			playerSchematicsFolder.mkdir();
 		}
 	}
 	
@@ -55,6 +66,29 @@ public class PlayerStatsManager {
 	public FileConfiguration getPlayerData(Player p) {
 		File playerFile = getPlayerFile(p);
 		return YamlConfiguration.loadConfiguration(playerFile);
+	}
+	
+	public File getPlayerIsland(String schematicName) {
+		File file = new File(playerSchematicsFolder, schematicName);
+		if (!file.exists()) {
+			File srcFile = getBasicSchematicFile();
+			try {
+				FileUtils.copyFile(srcFile, file);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return file;
+	}
+	
+	private File getBasicSchematicFile() {
+		String schematicName = ConfigManager.getManager().getConfig().getString("DefaultSchematicFile") + ".schematic";
+		File file = new File(islandSchematicsFolder, schematicName);
+		if (!file.exists()) {
+			System.out.println("ERROR! Basic island schematic not found with name: '"+schematicName + "' in folder: '"+islandSchematicsFolder.getAbsolutePath()+"'.");
+			return null;
+		}
+		return file;
 	}
 	
 	private File getPlayerFile(Player p) {
