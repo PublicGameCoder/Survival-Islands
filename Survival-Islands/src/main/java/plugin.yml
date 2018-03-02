@@ -2,6 +2,7 @@ main: survivalislands.SurvivalIslands
 name: Survival-Islands
 version: 1.0.0
 author: PublicGameCoder
+depend: [WorldEdit]
 
 commands:
    SurvivalIsland:

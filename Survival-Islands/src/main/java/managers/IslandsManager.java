@@ -10,12 +10,10 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import com.sk89q.worldedit.MaxChangedBlocksException;
-import com.sk89q.worldedit.world.DataException;
 
 import islands.PlayerIsland;
 import utilities.chatUtil;
 
-@SuppressWarnings("deprecation")
 public class IslandsManager {
 
 	private static IslandsManager instance;
@@ -44,7 +42,7 @@ public class IslandsManager {
 		PlayerIsland island = new PlayerIsland(p, spawnLocation, spawnLocation);
 		try {
 			island.loadIsland();
-		} catch (MaxChangedBlocksException | DataException | IOException e) {
+		} catch (IOException | MaxChangedBlocksException e) {
 			System.out.println("island Loading failed!");
 			chatUtil.sendMessage(p, ChatColor.RED+"Island loading failed.", true);
 			chatUtil.sendMessage(p, ChatColor.RED+"Please report this bugg to our staff.", true);
@@ -77,6 +75,12 @@ public class IslandsManager {
 			}
 		}
 		return null;
+	}
+
+	public void unloadAll() {
+		for (PlayerIsland playerIsland : islands) {
+			playerIsland.unloadIsland();
+		}
 	}
 
 }

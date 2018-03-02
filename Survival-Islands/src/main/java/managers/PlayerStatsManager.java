@@ -69,7 +69,7 @@ public class PlayerStatsManager {
 	}
 	
 	public File getPlayerIsland(String schematicName) {
-		File file = new File(playerSchematicsFolder, schematicName);
+		File file = new File(playerSchematicsFolder, schematicName + ".schematic");
 		if (!file.exists()) {
 			File srcFile = getBasicSchematicFile();
 			try {

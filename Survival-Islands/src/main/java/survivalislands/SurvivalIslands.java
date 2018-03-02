@@ -1,6 +1,9 @@
 package survivalislands;
 
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 
 import managers.CMDManager;
 import managers.ConfigManager;
@@ -11,15 +14,15 @@ import managers.WorldProcessInteractor;
 public class SurvivalIslands extends JavaPlugin {
 
 	private static SurvivalIslands instance;
+	private static WorldEditPlugin worldEdit;
 	
 	@Override
 	public void onLoad() {
-		// TODO Loading configuration
+		worldEdit = (WorldEditPlugin) Bukkit.getServer().getPluginManager().getPlugin("WorldEdit");
 	}
 	
 	@Override
 	public void onEnable() {
-		// TODO Setting configuration
 		instance = this;
 		
 		getCommand("SurvivalIsland").setExecutor(CMDManager.getManager());
@@ -36,10 +39,15 @@ public class SurvivalIslands extends JavaPlugin {
 	
 	@Override
 	public void onDisable() {
+		IslandsManager.getManager().unloadAll();
 		WorldProcessInteractor.getManager().deleteByDisable();
 	}
 	
 	public static SurvivalIslands getInstance() {
 		return instance;
+	}
+
+	public static WorldEditPlugin getWorldEdit() {
+		return worldEdit;
 	}
 }
