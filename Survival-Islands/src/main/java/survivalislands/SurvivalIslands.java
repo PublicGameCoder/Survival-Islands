@@ -1,6 +1,7 @@
 package survivalislands;
 
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
@@ -10,6 +11,7 @@ import managers.ConfigManager;
 import managers.IslandsManager;
 import managers.PlayerStatsManager;
 import managers.WorldProcessInteractor;
+import utilities.TeleportFix;
 
 public class SurvivalIslands extends JavaPlugin {
 
@@ -35,6 +37,11 @@ public class SurvivalIslands extends JavaPlugin {
 		PlayerStatsManager.getManager();
 		WorldProcessInteractor.getManager();
 		IslandsManager.getManager();
+		
+		PluginManager pm = getServer().getPluginManager();
+		
+		pm.registerEvents(new TeleportFix(getInstance(), getServer()), getInstance());
+		
 	}
 	
 	@Override
