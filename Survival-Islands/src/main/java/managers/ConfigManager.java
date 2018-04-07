@@ -11,7 +11,6 @@ import survivalislands.SurvivalIslands;
 public class ConfigManager {
 
 	private static ConfigManager instance;
-	@SuppressWarnings("unused")
 	private File configFile;
 	
 	public static ConfigManager getManager() {

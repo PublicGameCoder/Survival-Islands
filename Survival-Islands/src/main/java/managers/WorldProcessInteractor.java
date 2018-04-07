@@ -8,10 +8,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
+import org.bukkit.entity.Player;
 
 public class WorldProcessInteractor {
 
@@ -69,6 +71,11 @@ public class WorldProcessInteractor {
 	}
 	
 	public void deleteByDisable() {
+		List<Player> players = islandWorld.getPlayers();
+		for (Player player : players) {
+			player.teleport(IslandsManager.getManager().getLobbyLocation());
+		}
+		Bukkit.unloadWorld(islandWorld, false);
 		deleteWorld(islandWorld.getWorldFolder());
 	}
 	

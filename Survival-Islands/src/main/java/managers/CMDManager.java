@@ -1,12 +1,12 @@
 package managers;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import islands.PlayerIsland;
 import utilities.chatUtil;
 
 public class CMDManager implements CommandExecutor {
@@ -51,12 +51,28 @@ public class CMDManager implements CommandExecutor {
 		if (args.length > 0) {
 			if (args[0].equalsIgnoreCase("Create") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin") || p.hasPermission("SurvivalIsland.Anywhere") || p.hasPermission("SurvivalIsland.User"))) {
 				// TODO Implement Island Creation Functionality.
-				chatUtil.sendMessage(p, "TestMessage Create command!", true);
 				boolean success = IslandsManager.getManager().loadIsland(p);
 				if (success) {
 					chatUtil.sendMessage(p, ChatColor.GRAY+"Entering island..", true);
-					Location spawnLocation = IslandsManager.getManager().getSpawnOf(p);
-					p.teleport(spawnLocation);
+					PlayerIsland island = IslandsManager.getManager().getIslandOf(p);
+					island.homing(p);
+				}
+				return true;
+			}
+			
+			if (args[0].equalsIgnoreCase("Home") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin") || p.hasPermission("SurvivalIsland.Anywhere") || p.hasPermission("SurvivalIsland.User"))) {
+				// TODO Implement Island Creation Functionality.
+				PlayerIsland island = IslandsManager.getManager().getIslandOf(p);
+				boolean success = true;
+				if (island == null) {
+					success = IslandsManager.getManager().loadIsland(p);
+					island = IslandsManager.getManager().getIslandOf(p);
+				}
+				if (success) {
+					chatUtil.sendMessage(p, ChatColor.GRAY+"Entering island..", true);
+					island.homing(p);
+				}else {
+					chatUtil.sendMessage(p, ChatColor.GRAY+"Something went wrong. please contact a staff!", true);
 				}
 				return true;
 			}
@@ -69,7 +85,9 @@ public class CMDManager implements CommandExecutor {
 			
 			if (args[0].equalsIgnoreCase("Reload") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin"))) {
 				// TODO Implement Reload Functionality.
-				chatUtil.sendMessage(p, "TestMessage Reload command!", true);
+				//chatUtil.sendMessage(p, "TestMessage Reload command!", true);
+				IslandsManager.getManager().unloadAll();
+				ShopManager.getManager().reload();
 				return true;
 			}
 		}
@@ -84,6 +102,7 @@ public class CMDManager implements CommandExecutor {
 			messages = new String[] {
 					"&8=========[&6Survival&7-&6Islands &cHelp&8]=======",
 					"/"+_label+" Create | Creates your Survival Island.",
+					"/"+_label+" Home | Go to your Survival Island Home.",
 					"/"+_label+" Manager | Access your manager from anywhere.",
 					"/"+_label+" Reload  | Reloads all of the configs.",
 					"&8==========================================================="
@@ -97,6 +116,7 @@ public class CMDManager implements CommandExecutor {
 			messages = new String[] {
 					"&8=========[&6Survival&7-&6Islands &cHelp&8]=======",
 					"/"+_label+" Create | Creates your Survival Island.",
+					"/"+_label+" Home | Go to your Survival Island Home.",
 					"/"+_label+" Manager | Access your manager from anywhere.",
 					"/"+_label+" Reload  | Reloads all of the configs.",
 					"&8==========================================================="
@@ -110,6 +130,7 @@ public class CMDManager implements CommandExecutor {
 			messages = new String[] {
 					"&8=========[&6Survival&7-&6Islands &cHelp&8]=======",
 					"/"+_label+" Create | Creates your Survival Island.",
+					"/"+_label+" Home | Go to your Survival Island Home.",
 					"/"+_label+" Manager | Access your manager from anywhere.",
 					"&8==========================================================="
 			};
@@ -123,6 +144,7 @@ public class CMDManager implements CommandExecutor {
 			messages = new String[] {
 					"&8=========[&6Survival&7-&6Islands &cHelp&8]=======",
 					"/"+_label+" Create | Creates your Survival Island.",
+					"/"+_label+" Home | Go to your Survival Island Home.",
 					"&8==========================================================="
 			};
 			
