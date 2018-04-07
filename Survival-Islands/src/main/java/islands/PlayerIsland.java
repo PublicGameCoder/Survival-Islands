@@ -29,7 +29,6 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardWriter;
 import com.sk89q.worldedit.function.mask.ExistingBlockMask;
 import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
 import com.sk89q.worldedit.function.operation.Operations;
-import com.sk89q.worldedit.patterns.SingleBlockPattern;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.CylinderRegion;
 import com.sk89q.worldedit.world.World;
@@ -40,7 +39,6 @@ import managers.PlayerStatsManager;
 import net.citizensnpcs.api.event.DespawnReason;
 import utilities.chatUtil;
 
-@SuppressWarnings("deprecation")
 public class PlayerIsland {
 	
 	private UUID ownerUUID;
@@ -123,8 +121,8 @@ public class PlayerIsland {
         Vector to;
         if (isNew.get()) {
         	to = new Vector(originVector.getBlockX() - 21,60,originVector.getBlockZ() -21);//to = new Vector(originVector.getBlockX(),originVector.getBlockY(),originVector.getBlockZ());
-        	Vector borderCenter = new Vector(to.getX(),to.getY()+2,to.getZ());
-        	generateBorder(borderCenter,21);
+        	//Vector borderCenter = new Vector(to.getX(),to.getY()+2,to.getZ());
+        	//generateBorder(borderCenter,21);
         }else {
         	to = new Vector(originVector.getBlockX() - 21,60,originVector.getBlockZ() -21);
         }
@@ -140,7 +138,7 @@ public class PlayerIsland {
         copy.setSourceMask(new ExistingBlockMask(clipboard));
         Operations.completeLegacy(copy);
 	}
-	
+	/*
 	private void generateBorder(Vector borderCenter, double radius) {
 		World world = new BukkitWorld(center.getWorld());
 		EditSession es = WorldEdit.getInstance().getEditSessionFactory().getEditSession(world, -1);
@@ -152,7 +150,7 @@ public class PlayerIsland {
 	    } catch(MaxChangedBlocksException ignored) {
 	        // We have no limit, this should never be hit
 	    }
-	}
+	}*/
 
 	public Player getPlayer() {
 		return Bukkit.getPlayer(ownerUUID);

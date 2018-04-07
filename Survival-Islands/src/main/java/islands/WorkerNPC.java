@@ -36,7 +36,7 @@ public class WorkerNPC implements Listener {
 	public WorkerNPC(PlayerIsland island) {
 		this.island = island;
 		NPCRegistry registry = CitizensAPI.getNPCRegistry();
-		npc = registry.createNPC(EntityType.PLAYER, "Worker");
+		npc = registry.createNPC(EntityType.PLAYER, "Manager");
 		npc.setProtected(true);
 		npc.setFlyable(false);
 		
@@ -59,7 +59,7 @@ public class WorkerNPC implements Listener {
 	}
 
 	private void setupGUIs() {
-		GUI_Main = Bukkit.createInventory(null, 1 * 9, "Worker");
+		GUI_Main = Bukkit.createInventory(null, 1 * 9, "Manager");
 		GUI_Main.setItem(1, getSelection(Selection.SHOP));
 	}
 
