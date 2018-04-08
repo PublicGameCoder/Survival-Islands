@@ -13,12 +13,17 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 
+import net.milkbowl.vault.economy.Economy;
+import net.milkbowl.vault.economy.EconomyResponse;
 import survivalislands.SurvivalIslands;
+import utilities.chatUtil;
 
 public class ShopManager implements Listener{
 	private static ShopManager instance;
@@ -26,7 +31,13 @@ public class ShopManager implements Listener{
 	private int mainTotalRows;
 	private int categoryTotalRows;
 	private Map<ItemStack, List<ItemStack>> shopsContent;
+	private Map<ItemStack, String> shopItemPrices;
 	private Map<ItemStack, List<Inventory>> shops;
+	
+	private ItemStack nextPageItem;
+	private ItemStack prevPageItem;
+	private ItemStack prevMenuItem;
+	private ItemStack backToNPCMenu;
 	
 	public static ShopManager getManager() {
 		if (instance == null) {
@@ -36,11 +47,13 @@ public class ShopManager implements Listener{
 	}
 	
 	private ShopManager() {
+		createCustomItems();
 		mainTotalRows = 2;
 		categoryTotalRows = 6;
 		Shop_Main = Bukkit.createInventory(null, mainTotalRows * 9, ChatColor.GOLD+"Shop");
 		loadShopCategories();
 		
+		Shop_Main.setItem((mainTotalRows * 9) - 9, backToNPCMenu);
 		for (ItemStack itemStack : shops.keySet()) {
 			Shop_Main.addItem(itemStack);
 		}
@@ -48,7 +61,33 @@ public class ShopManager implements Listener{
 		SurvivalIslands.getInstance().getServer().getPluginManager().registerEvents(this, SurvivalIslands.getInstance());
 	}
 	
+	@SuppressWarnings("deprecation")
+	private void createCustomItems() {
+		nextPageItem = new ItemStack(Material.SKULL_ITEM, 1,(short) 0, (byte)3);
+		SkullMeta meta1 = (SkullMeta) nextPageItem.getItemMeta();
+		meta1.setOwner("MHF_ArrowRight");
+		meta1.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&3Next page &7-->"));
+		nextPageItem.setItemMeta(meta1);
+		
+		prevPageItem = new ItemStack(Material.SKULL_ITEM, 1,(short) 0, (byte)3);
+		SkullMeta meta2 = (SkullMeta) prevPageItem.getItemMeta();
+		meta2.setOwner("MHF_ArrowLeft");
+		meta2.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&7<-- &3Previous page"));
+		prevPageItem.setItemMeta(meta2);
+		
+		prevMenuItem = new ItemStack(Material.BARRIER, 1);
+		ItemMeta meta3 = prevMenuItem.getItemMeta();
+		meta3.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&3Back to shop menu"));
+		prevMenuItem.setItemMeta(meta3);
+		
+		backToNPCMenu = new ItemStack(Material.BARRIER, 1);
+		ItemMeta meta4 = prevMenuItem.getItemMeta();
+		meta4.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&3Back to island menu"));
+		backToNPCMenu.setItemMeta(meta4);
+	}
+
 	private void loadShopCategories() {
+		shopItemPrices = new HashMap<ItemStack, String>();
 		shopsContent = new HashMap<ItemStack, List<ItemStack>>();
 		Map<String, List<String>> categories = ShopConfigManager.getManager().getShopCategories();
 		for (Entry<String, List<String>> entry : categories.entrySet()) {
@@ -74,11 +113,27 @@ public class ShopManager implements Listener{
 			for (int i = 0; i < pageAmount; i++) {
 				String displayName = entry.getKey().getItemMeta().getDisplayName() + " "+ChatColor.GOLD+(i+1)+ChatColor.DARK_GRAY+"/"+ChatColor.GOLD+pageAmount;
 				displayName = displayName.replaceAll("_", " ");
+				Inventory page = null;
 				try {
-					pages.add(Bukkit.createInventory(null, categoryTotalRows * 9, displayName));
+					page = Bukkit.createInventory(null, categoryTotalRows * 9, displayName);
 				}catch (Exception e) {
 					System.out.println("Display name is too long: "+displayName);
 					e.printStackTrace();
+					continue;
+				}
+				
+				page.setItem(0, prevMenuItem);
+				
+				pages.add(page);
+			}
+			
+			for (int i = 0; i < pages.size(); i++) {
+				if (i+1 < pages.size() && i+1 >= 0 && pages.get(i+1) != null) {
+					pages.get(i).setItem((categoryTotalRows * 9) - 1, nextPageItem);
+				}
+				
+				if (i-1 < pages.size() && i-1 >= 0 && pages.get(i-1) != null) {
+					pages.get(i).setItem((categoryTotalRows * 9) - 9, prevPageItem);
 				}
 			}
 			
@@ -94,6 +149,7 @@ public class ShopManager implements Listener{
 				Inventory inv = pages.get(pageIndex);
 				inv.setItem(itemCounter + 9 - 1, it.next());
 			}
+			
 			shops.put(entry.getKey(), pages);
 		}
 		
@@ -109,6 +165,9 @@ public class ShopManager implements Listener{
 		float sellPrice = Float.parseFloat(args[4]);
 		
 		ItemStack item = new ItemStack(mat,amount,(byte)data);
+		
+		shopItemPrices.put(item.clone(), buyPrice+":"+sellPrice);//Add it to shopItemPrices before lore has been set.
+		
 		ItemMeta meta = item.getItemMeta();
 		List<String> lore = new ArrayList<String>();
 		lore.add("");
@@ -138,6 +197,11 @@ public class ShopManager implements Listener{
 		Player player = (Player) e.getWhoClicked();
 		e.setCancelled(true);
 		
+		
+		if (item.getItemMeta().getDisplayName().equalsIgnoreCase(backToNPCMenu.getItemMeta().getDisplayName())) {
+			IslandsManager.getManager().openIslandManager(player);
+		}
+		
 		for (Entry<ItemStack, List<Inventory>> entry : shops.entrySet()) {
 			if (item.getItemMeta().getDisplayName().equalsIgnoreCase(entry.getKey().getItemMeta().getDisplayName())) {
 				player.openInventory(entry.getValue().get(0));
@@ -151,17 +215,136 @@ public class ShopManager implements Listener{
 		if (e.getInventory() == null)return;
 		
 		ItemStack item = e.getCurrentItem();
-		if (item == null)return;
+		if (item == null || item.getType() == Material.AIR)return;
 		
 		ItemStack selectorItem = getSelectorItemFromPage(e.getInventory());
 		if (selectorItem == null)return;
 		
 		e.setCancelled(true);
+		Player player = (Player) e.getWhoClicked();
 		
-		@SuppressWarnings("unused")
 		int currentPageIndex = getPageIndex(selectorItem, e.getInventory());
+		
+		if (item.getItemMeta().hasDisplayName() && item.getItemMeta().getDisplayName().equalsIgnoreCase(nextPageItem.getItemMeta().getDisplayName()) && hasNext(selectorItem, currentPageIndex)) {
+			Inventory next = getNext(selectorItem, currentPageIndex);
+			if (next != null) {
+				player.openInventory(next);
+			}
+		}
+		
+		if (item.getItemMeta().hasDisplayName() && item.getItemMeta().getDisplayName().equalsIgnoreCase(prevPageItem.getItemMeta().getDisplayName()) && hasPrev(selectorItem, currentPageIndex)) {
+			Inventory prev = getPrev(selectorItem, currentPageIndex);
+			if (prev != null) {
+				player.openInventory(prev);
+			}
+		}
+		
+		if (item.getItemMeta().hasDisplayName() && item.getItemMeta().getDisplayName().equalsIgnoreCase(prevMenuItem.getItemMeta().getDisplayName())) {
+			player.openInventory(Shop_Main);
+		}
+		
+		for (ItemStack shopItem : shopsContent.get(selectorItem)) {
+			if (item.getItemMeta().toString().equalsIgnoreCase(shopItem.getItemMeta().toString())) {
+				ClickType clickType = e.getClick();
+				
+				String costs = getItemCosts(shopItem);
+				if (costs == null)continue;
+				String[] args = costs.split(":");
+				double buyCost = Double.parseDouble(args[0]);
+				double sellCost = Double.parseDouble(args[1]);
+				
+				Economy econ = SurvivalIslands.getEconomy();
+				
+				if (clickType == ClickType.LEFT) {
+					EconomyResponse transactionPaper = econ.withdrawPlayer(player, buyCost);
+					if (transactionPaper.transactionSuccess()) {
+						chatUtil.sendMessage(player, "&a"+buyCost+"$ withdraw successful!", true);
+						ItemStack invItem = getRawItem(shopItem);
+						player.getInventory().addItem(invItem);
+					}else {
+						chatUtil.sendMessage(player, "&cYou can't afford this item!", true);
+					}
+				}else if (clickType == ClickType.RIGHT) {
+					ItemStack invItem = getRawItem(shopItem);
+					if (player.getInventory().contains(invItem.getType(), invItem.getAmount())) {
+						Map<Integer, ItemStack> rests = player.getInventory().removeItem(invItem);
+						
+						if (rests.isEmpty()) {
+							EconomyResponse transactionPaper = econ.depositPlayer(player, sellCost);
+							if (transactionPaper.transactionSuccess()) {
+								chatUtil.sendMessage(player, "&a"+sellCost+"$ deposit successful!", true);
+							}else {
+								chatUtil.sendMessage(player, "&cDeposit failure! please contact staff to deposit "+ sellCost +" to your account!", true);
+							}
+						}else {
+							chatUtil.sendMessage(player, "&cSomething went wrong when trying to remove the selling item from your inventory!", true);
+							chatUtil.sendMessage(player, "Please contact a staff member to report this problem", true);
+						}
+					}else {
+						chatUtil.sendMessage(player, "You don't have enough of this item to sell it!", true);
+					}
+				}
+				break;
+			}
+		}
 	}
 	
+	@SuppressWarnings("deprecation")
+	private String getItemCosts(ItemStack shopItem) {
+		for (Entry<ItemStack, String> entry : shopItemPrices.entrySet()) {
+			ItemStack key = entry.getKey();
+			Material mat = key.getType();
+			int amount = key.getAmount();
+			byte data = key.getData().getData();
+			if (shopItem.getType() == mat && shopItem.getAmount() == amount && shopItem.getData().getData() == data) {
+				return entry.getValue();
+			}
+		}
+		return null;
+	}
+	
+	@SuppressWarnings("deprecation")
+	private ItemStack getRawItem(ItemStack shopItem) {
+		for (Entry<ItemStack, String> entry : shopItemPrices.entrySet()) {
+			ItemStack key = entry.getKey();
+			Material mat = key.getType();
+			int amount = key.getAmount();
+			byte data = key.getData().getData();
+			if (shopItem.getType() == mat && shopItem.getAmount() == amount && shopItem.getData().getData() == data) {
+				return entry.getKey();
+			}
+		}
+		return null;
+	}
+
+	private Inventory getNext(ItemStack selectorItem, int currentPageIndex) {
+		List<Inventory> pages = shops.get(selectorItem);
+		if (pages == null || pages.isEmpty()) return null;
+		int next = currentPageIndex + 1;
+		return pages.get(next);
+	}
+	
+	private Inventory getPrev(ItemStack selectorItem, int currentPageIndex) {
+		List<Inventory> pages = shops.get(selectorItem);
+		if (pages == null || pages.isEmpty()) return null;
+		int prev = currentPageIndex - 1;
+		return pages.get(prev);
+	}
+
+	private boolean hasNext(ItemStack selectorItem, int currentPageIndex) {
+		List<Inventory> pages = shops.get(selectorItem);
+		if (pages == null || pages.isEmpty()) return false;
+		int next = currentPageIndex + 1;
+		return (next < pages.size() && next >= 0 && pages.get(next) != null);
+	}
+	
+	private boolean hasPrev(ItemStack selectorItem, int currentPageIndex) {
+		List<Inventory> pages = shops.get(selectorItem);
+		if (pages == null || pages.isEmpty()) return false;
+		int prev = currentPageIndex - 1;
+		return (prev < pages.size() && prev >= 0 && pages.get(prev) != null);
+	}
+
 	private ItemStack getSelectorItemFromPage(Inventory inv) {
 		for (Entry<ItemStack, List<Inventory>> invs : shops.entrySet()) {
 			for (Inventory inventory : invs.getValue()) {

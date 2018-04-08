@@ -110,6 +110,16 @@ public class IslandsManager implements Listener {
 		}
 		return null;
 	}
+	
+	public void openIslandManager(Player player) {
+		PlayerIsland island = IslandsManager.getManager().getIslandOf(player);
+		if (island == null) {
+			player.closeInventory();
+			chatUtil.sendMessage(player, "&cPlease create an island before trying to access an island menu!");
+		}else {
+			island.getNPC().openMenu(player);
+		}
+	}
 
 	public void unloadAll() {
 		for (PlayerIsland playerIsland : islands) {

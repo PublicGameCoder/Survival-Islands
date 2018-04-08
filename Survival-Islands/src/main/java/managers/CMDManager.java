@@ -50,7 +50,6 @@ public class CMDManager implements CommandExecutor {
 		
 		if (args.length > 0) {
 			if (args[0].equalsIgnoreCase("Create") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin") || p.hasPermission("SurvivalIsland.Anywhere") || p.hasPermission("SurvivalIsland.User"))) {
-				// TODO Implement Island Creation Functionality.
 				boolean success = IslandsManager.getManager().loadIsland(p);
 				if (success) {
 					chatUtil.sendMessage(p, ChatColor.GRAY+"Entering island..", true);
@@ -61,7 +60,6 @@ public class CMDManager implements CommandExecutor {
 			}
 			
 			if (args[0].equalsIgnoreCase("Home") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin") || p.hasPermission("SurvivalIsland.Anywhere") || p.hasPermission("SurvivalIsland.User"))) {
-				// TODO Implement Island Creation Functionality.
 				PlayerIsland island = IslandsManager.getManager().getIslandOf(p);
 				boolean success = true;
 				if (island == null) {
@@ -78,14 +76,11 @@ public class CMDManager implements CommandExecutor {
 			}
 			
 			if (args[0].equalsIgnoreCase("Manager") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin") || p.hasPermission("SurvivalIsland.Anywhere"))) {
-				// TODO Implement External Island Manager Access Functionality.
-				chatUtil.sendMessage(p, "TestMessage Manager command!", true);
+				IslandsManager.getManager().openIslandManager(p);
 				return true;
 			}
 			
 			if (args[0].equalsIgnoreCase("Reload") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin"))) {
-				// TODO Implement Reload Functionality.
-				//chatUtil.sendMessage(p, "TestMessage Reload command!", true);
 				IslandsManager.getManager().unloadAll();
 				ShopManager.getManager().reload();
 				return true;

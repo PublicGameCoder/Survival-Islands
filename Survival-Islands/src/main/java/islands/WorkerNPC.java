@@ -82,6 +82,10 @@ public class WorkerNPC implements Listener {
 	public void onRightClick(NPCRightClickEvent e) {
 		if (getIsland() == null || getIsland().getPlayer() == null ||!e.getClicker().getName().equalsIgnoreCase(getIsland().getPlayer().getName()) || e.getNPC().getId() != npc.getId())return;
 		Player p = e.getClicker();
+		openMenu(p);
+	}
+	
+	public void openMenu(Player p) {
 		p.openInventory(GUI_Main);
 	}
 	
