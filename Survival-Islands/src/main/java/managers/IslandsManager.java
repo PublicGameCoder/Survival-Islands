@@ -10,6 +10,9 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import com.sk89q.worldedit.MaxChangedBlocksException;
 
@@ -42,6 +45,29 @@ public class IslandsManager implements Listener {
 		lobbySpawn = Bukkit.getWorlds().get(0).getSpawnLocation();
 		
 		SurvivalIslands.getInstance().getServer().getPluginManager().registerEvents(this, SurvivalIslands.getInstance());
+		
+		final PotionEffect nightvision = new PotionEffect(PotionEffectType.NIGHT_VISION, 999999, 1);
+		
+		new BukkitRunnable() {
+			
+			@Override
+			public void run() {
+				for (PlayerIsland playerIsland : islands) {
+					Player p = playerIsland.getPlayer();
+					if (p == null)continue;
+					Location loc = p.getLocation();
+					Location spawnLoc = playerIsland.getSpawnLocation();
+					double xDist = loc.getX() - spawnLoc.getX();
+					double zDist = loc.getZ() - spawnLoc.getZ();
+					double xzDist = Math.sqrt((xDist * xDist) + (zDist * zDist));
+					if (loc.getWorld() == spawnLoc.getWorld() && loc.getBlockY() < (spawnLoc.getBlockY() - 5) && xzDist <= diameter) {
+						p.addPotionEffect(nightvision);
+					}else {
+						p.removePotionEffect(PotionEffectType.NIGHT_VISION);
+					}
+				}
+			}
+		}.runTaskTimer(SurvivalIslands.getInstance(), 0, 20);
 	}
 	
 	public boolean loadIsland(Player p) {
