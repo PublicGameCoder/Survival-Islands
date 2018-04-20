@@ -15,15 +15,15 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.scheduler.BukkitRunnable;
 
-import net.milkbowl.vault.economy.Economy;
-import net.milkbowl.vault.economy.EconomyResponse;
+import managers.Transaction.TransactionType;
 import survivalislands.SurvivalIslands;
-import utilities.chatUtil;
 
 public class ShopManager implements Listener{
 	private static ShopManager instance;
@@ -31,8 +31,9 @@ public class ShopManager implements Listener{
 	private int mainTotalRows;
 	private int categoryTotalRows;
 	private Map<ItemStack, List<ItemStack>> shopsContent;
-	private Map<ItemStack, String> shopItemPrices;
+	public Map<ItemStack, String> shopItemPrices;
 	private Map<ItemStack, List<Inventory>> shops;
+	private List<Transaction> pending;;
 	
 	private ItemStack nextPageItem;
 	private ItemStack prevPageItem;
@@ -47,6 +48,7 @@ public class ShopManager implements Listener{
 	}
 	
 	private ShopManager() {
+		pending = new ArrayList<Transaction>();
 		createCustomItems();
 		mainTotalRows = 2;
 		categoryTotalRows = 6;
@@ -59,6 +61,23 @@ public class ShopManager implements Listener{
 		}
 		
 		SurvivalIslands.getInstance().getServer().getPluginManager().registerEvents(this, SurvivalIslands.getInstance());
+		
+		new BukkitRunnable() {
+			
+			@Override
+			public void run() {
+				Iterator<Transaction> it = pending.iterator();
+				
+				while (it.hasNext()) {
+					Transaction transaction = it.next();
+					if (transaction.isFinished()) {
+						InventoryClickEvent.getHandlerList().unregister(transaction);
+						InventoryCloseEvent.getHandlerList().unregister(transaction);
+						it.remove();
+					}
+				}
+			}
+		}.runTaskTimer(SurvivalIslands.getInstance(), 0, 40);
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -246,75 +265,16 @@ public class ShopManager implements Listener{
 		for (ItemStack shopItem : shopsContent.get(selectorItem)) {
 			if (item.getItemMeta().toString().equalsIgnoreCase(shopItem.getItemMeta().toString())) {
 				ClickType clickType = e.getClick();
-				
-				String costs = getItemCosts(shopItem);
-				if (costs == null)continue;
-				String[] args = costs.split(":");
-				double buyCost = Double.parseDouble(args[0]);
-				double sellCost = Double.parseDouble(args[1]);
-				
-				Economy econ = SurvivalIslands.getEconomy();
-				
 				if (clickType == ClickType.LEFT) {
-					EconomyResponse transactionPaper = econ.withdrawPlayer(player, buyCost);
-					if (transactionPaper.transactionSuccess()) {
-						chatUtil.sendMessage(player, "&a"+buyCost+"$ withdraw successful!", true);
-						ItemStack invItem = getRawItem(shopItem);
-						player.getInventory().addItem(invItem);
-					}else {
-						chatUtil.sendMessage(player, "&cYou can't afford this item!", true);
-					}
+					Transaction transaction = new Transaction(TransactionType.BUY, player, shopItem, e.getInventory());
+					this.pending.add(transaction);
 				}else if (clickType == ClickType.RIGHT) {
-					ItemStack invItem = getRawItem(shopItem);
-					if (player.getInventory().contains(invItem.getType(), invItem.getAmount())) {
-						Map<Integer, ItemStack> rests = player.getInventory().removeItem(invItem);
-						
-						if (rests.isEmpty()) {
-							EconomyResponse transactionPaper = econ.depositPlayer(player, sellCost);
-							if (transactionPaper.transactionSuccess()) {
-								chatUtil.sendMessage(player, "&a"+sellCost+"$ deposit successful!", true);
-							}else {
-								chatUtil.sendMessage(player, "&cDeposit failure! please contact staff to deposit "+ sellCost +" to your account!", true);
-							}
-						}else {
-							chatUtil.sendMessage(player, "&cSomething went wrong when trying to remove the selling item from your inventory!", true);
-							chatUtil.sendMessage(player, "Please contact a staff member to report this problem", true);
-						}
-					}else {
-						chatUtil.sendMessage(player, "You don't have enough of this item to sell it!", true);
-					}
+					Transaction transaction = new Transaction(TransactionType.SELL, player, shopItem, e.getInventory());
+					this.pending.add(transaction);
 				}
 				break;
 			}
 		}
-	}
-	
-	@SuppressWarnings("deprecation")
-	private String getItemCosts(ItemStack shopItem) {
-		for (Entry<ItemStack, String> entry : shopItemPrices.entrySet()) {
-			ItemStack key = entry.getKey();
-			Material mat = key.getType();
-			int amount = key.getAmount();
-			byte data = key.getData().getData();
-			if (shopItem.getType() == mat && shopItem.getAmount() == amount && shopItem.getData().getData() == data) {
-				return entry.getValue();
-			}
-		}
-		return null;
-	}
-	
-	@SuppressWarnings("deprecation")
-	private ItemStack getRawItem(ItemStack shopItem) {
-		for (Entry<ItemStack, String> entry : shopItemPrices.entrySet()) {
-			ItemStack key = entry.getKey();
-			Material mat = key.getType();
-			int amount = key.getAmount();
-			byte data = key.getData().getData();
-			if (shopItem.getType() == mat && shopItem.getAmount() == amount && shopItem.getData().getData() == data) {
-				return entry.getKey();
-			}
-		}
-		return null;
 	}
 
 	private Inventory getNext(ItemStack selectorItem, int currentPageIndex) {
