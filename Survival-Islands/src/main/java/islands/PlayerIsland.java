@@ -1,7 +1,6 @@
 package islands;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -9,8 +8,21 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.primesoft.asyncworldedit.AsyncWorldEditBukkit;
+import org.primesoft.asyncworldedit.api.blockPlacer.IBlockPlacer;
+import org.primesoft.asyncworldedit.api.blockPlacer.IBlockPlacerListener;
+import org.primesoft.asyncworldedit.api.blockPlacer.IJobEntryListener;
+import org.primesoft.asyncworldedit.api.blockPlacer.entries.IJobEntry;
+import org.primesoft.asyncworldedit.api.blockPlacer.entries.JobStatus;
+import org.primesoft.asyncworldedit.api.playerManager.IPlayerEntry;
+import org.primesoft.asyncworldedit.api.playerManager.IPlayerManager;
+import org.primesoft.asyncworldedit.api.utils.IFuncParamEx;
+import org.primesoft.asyncworldedit.api.worldedit.IAsyncEditSessionFactory;
+import org.primesoft.asyncworldedit.api.worldedit.ICancelabeEditSession;
+import org.primesoft.asyncworldedit.api.worldedit.IThreadSafeEditSession;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.MaxChangedBlocksException;
@@ -22,9 +34,7 @@ import com.sk89q.worldedit.blocks.BlockID;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.extent.Extent;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardWriter;
 import com.sk89q.worldedit.function.mask.ExistingBlockMask;
 import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
@@ -35,6 +45,7 @@ import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.registry.WorldData;
 
 import managers.IslandsManager;
+import managers.PasteAction;
 import managers.PlayerStatsManager;
 import net.citizensnpcs.api.event.DespawnReason;
 import utilities.chatUtil;
@@ -45,12 +56,16 @@ public class PlayerIsland {
 	private Location center;
 	private Location npcLocation;
 	private WorkerNPC wnpc;
+	private String islandGenerateJobName;
+	private boolean _isGenerated;
 	
 	public PlayerIsland(Player p, Location spawnLocation, Location npcLocation) {
 		this.ownerUUID = p.getUniqueId();
 		this.center = spawnLocation;
 		this.npcLocation = npcLocation;
 		this.wnpc = new WorkerNPC(this);
+		this._isGenerated = false;
+		this.islandGenerateJobName = "GenIsland_"+p.getName();
 	}
 	
 	public void unloadIsland() {
@@ -112,7 +127,7 @@ public class PlayerIsland {
         }
 	}
 	
-	public void loadIsland() throws FileNotFoundException, IOException, MaxChangedBlocksException {
+	public void loadIsland(final boolean forceEnter) throws FileNotFoundException, IOException, MaxChangedBlocksException {
 		String schematicName = getPlayer().getUniqueId().toString();
 		AtomicBoolean isNew = new AtomicBoolean(false);
 		File file = PlayerStatsManager.getManager().getPlayerIsland(schematicName, isNew);
@@ -126,31 +141,56 @@ public class PlayerIsland {
         }else {
         	to = new Vector(originVector.getBlockX() - 21,60,originVector.getBlockZ() -21);
         }
-        World weWorld = new BukkitWorld(center.getWorld());
-        WorldData worldData = weWorld.getWorldData();	
-        FileInputStream input = new FileInputStream(file);
-        ClipboardReader reader = ClipboardFormat.SCHEMATIC.getReader(input);
-        Clipboard clipboard = reader.read(worldData);
-        input.close();
-        Extent source = clipboard;
-        Extent destination = WorldEdit.getInstance().getEditSessionFactory().getEditSession(weWorld, -1);
-        ForwardExtentCopy copy = new ForwardExtentCopy(source, clipboard.getRegion(), clipboard.getOrigin(), destination, to);
-        copy.setSourceMask(new ExistingBlockMask(clipboard));
-        Operations.completeLegacy(copy);
+        BukkitWorld weWorld = new BukkitWorld(center.getWorld());
+        
+        IAsyncEditSessionFactory ifactory = (IAsyncEditSessionFactory) WorldEdit.getInstance().getEditSessionFactory();
+        IThreadSafeEditSession destination = ifactory.getThreadSafeEditSession(weWorld, -1);
+        IBlockPlacer iPlacer = AsyncWorldEditBukkit.getInstance().getBlockPlacer();
+        IPlayerManager iManager = AsyncWorldEditBukkit.getInstance().getAPI().getPlayerManager();
+        IPlayerEntry iEntry = iManager.getPlayer(ownerUUID);
+        
+        AsyncWorldEditBukkit.getInstance().getAPI().getProgressDisplayManager().disableMessage(iEntry);
+        
+        iPlacer.addListener(new IBlockPlacerListener(){
+        	private IJobEntryListener listener;
+        	
+            @Override
+            public void jobRemoved(IJobEntry job) {
+                if(!job.getName().equalsIgnoreCase(islandGenerateJobName)) return;
+                if (this.listener != null) {
+                	job.removeStateChangedListener(this.listener);
+                }
+                _isGenerated = true;
+            }
+
+            @Override
+            public void jobAdded(IJobEntry job) {
+                if(!job.getName().equalsIgnoreCase(islandGenerateJobName)) return;
+                this.listener = new IJobEntryListener() {
+					
+					@Override
+					public void jobStateChanged(IJobEntry j) {
+						if (j.getStatus() == JobStatus.Done) {
+							_isGenerated = true;
+							System.out.println("island Loading success!");
+							Player p = (Player) getPlayer();
+							chatUtil.sendMessage(p, ChatColor.GREEN+"Island loading finished successfully!", true);
+							if (forceEnter) {
+								chatUtil.sendMessage(p, ChatColor.GREEN+"Entering island..", true);
+								homing(p);
+							}
+						}
+					}
+				};
+                
+                job.addStateChangedListener(listener);
+            }
+        });
+        
+		IFuncParamEx<Integer, ICancelabeEditSession, MaxChangedBlocksException> action = (IFuncParamEx<Integer, ICancelabeEditSession, MaxChangedBlocksException>) new PasteAction(weWorld, to, file);
+        
+        iPlacer.performAsAsyncJob(destination, iEntry, islandGenerateJobName, action);
 	}
-	/*
-	private void generateBorder(Vector borderCenter, double radius) {
-		World world = new BukkitWorld(center.getWorld());
-		EditSession es = WorldEdit.getInstance().getEditSessionFactory().getEditSession(world, -1);
-	    try {
-	         es.enableQueue();
-	         es.makeCylinder(borderCenter, new SingleBlockPattern(new BaseBlock(BlockID.BARRIER)), radius , (254 - borderCenter.getBlockY()), false);
-	         es.makeCylinder(new Vector(borderCenter.getBlockX(), 254, borderCenter.getBlockZ()), new SingleBlockPattern(new BaseBlock(BlockID.BARRIER)), radius , 1, true);
-	         es.flushQueue();
-	    } catch(MaxChangedBlocksException ignored) {
-	        // We have no limit, this should never be hit
-	    }
-	}*/
 
 	public Player getPlayer() {
 		return Bukkit.getPlayer(ownerUUID);
@@ -167,9 +207,18 @@ public class PlayerIsland {
 	public WorkerNPC getNPC() {
 		return wnpc;
 	}
+	
+	public boolean isGenerated() {
+		return this._isGenerated;
+	}
 
 	public void homing(final Player p) {
-		p.teleport(getSpawnLocation());
-		getNPC().spawn();
+		if (isGenerated()) {
+			chatUtil.sendMessage(p, ChatColor.GREEN+"Entering island..", true);
+			p.teleport(getSpawnLocation());
+			getNPC().spawn();
+		}else {
+			chatUtil.sendMessage(p, "The island isn't generated yet!", true);
+		}
 	}
 }

@@ -50,27 +50,25 @@ public class CMDManager implements CommandExecutor {
 		
 		if (args.length > 0) {
 			if (args[0].equalsIgnoreCase("Create") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin") || p.hasPermission("SurvivalIsland.Anywhere") || p.hasPermission("SurvivalIsland.User"))) {
-				boolean success = IslandsManager.getManager().loadIsland(p);
-				if (success) {
-					chatUtil.sendMessage(p, ChatColor.GRAY+"Entering island..", true);
-					PlayerIsland island = IslandsManager.getManager().getIslandOf(p);
-					island.homing(p);
-				}
+				IslandsManager.getManager().loadIsland(p, false);
 				return true;
 			}
 			
 			if (args[0].equalsIgnoreCase("Home") && (p.hasPermission("SurvivalIsland.All") || p.hasPermission("SurvivalIsland.Admin") || p.hasPermission("SurvivalIsland.Anywhere") || p.hasPermission("SurvivalIsland.User"))) {
 				PlayerIsland island = IslandsManager.getManager().getIslandOf(p);
 				boolean success = true;
+				boolean firstTime = false;
 				if (island == null) {
-					success = IslandsManager.getManager().loadIsland(p);
+					success = IslandsManager.getManager().loadIsland(p, true);
 					island = IslandsManager.getManager().getIslandOf(p);
+					firstTime = true;
 				}
-				if (success) {
-					chatUtil.sendMessage(p, ChatColor.GRAY+"Entering island..", true);
-					island.homing(p);
-				}else {
+				if (!success) {
 					chatUtil.sendMessage(p, ChatColor.GRAY+"Something went wrong. please contact a staff!", true);
+				}else {
+					if (!firstTime) {
+						island.homing(p);
+					}
 				}
 				return true;
 			}

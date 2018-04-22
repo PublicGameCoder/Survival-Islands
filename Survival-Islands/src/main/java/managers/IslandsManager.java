@@ -70,13 +70,17 @@ public class IslandsManager implements Listener {
 		}.runTaskTimer(SurvivalIslands.getInstance(), 0, 20);
 	}
 	
-	public boolean loadIsland(Player p) {
+	public boolean loadIsland(Player p, boolean forceEnter) {
+		if (hasIsland(p)) {
+			chatUtil.sendMessage(p, ChatColor.GREEN+"Island is already loaded!", true);
+			return true;
+		}
 		System.out.println("Loading island from: "+ p.getName());
 		chatUtil.sendMessage(p, ChatColor.GREEN+"Loading island...", true);
 		Location spawnLocation = getPasteLocation();
 		PlayerIsland island = new PlayerIsland(p, spawnLocation, spawnLocation.clone().subtract(-0.5, -6, 2.5));
 		try {
-			island.loadIsland();
+			island.loadIsland(forceEnter);
 		} catch (IOException | MaxChangedBlocksException e) {
 			System.out.println("island Loading failed!");
 			chatUtil.sendMessage(p, ChatColor.RED+"Island loading failed.", true);
@@ -84,8 +88,6 @@ public class IslandsManager implements Listener {
 			e.printStackTrace();
 			return false;
 		}
-		System.out.println("island Loading success!");
-		chatUtil.sendMessage(p, ChatColor.GREEN+"Island loading finished successfully!", true);
 		islands.add(island);
 		return true;
 	}
