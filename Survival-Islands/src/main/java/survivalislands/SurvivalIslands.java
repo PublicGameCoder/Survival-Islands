@@ -11,6 +11,7 @@ import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import managers.CMDManager;
 import managers.ConfigManager;
 import managers.IslandsManager;
+import managers.PickaxeLevelingManager;
 import managers.PlayerStatsManager;
 import managers.ShopConfigManager;
 import managers.ShopManager;
@@ -52,7 +53,7 @@ public class SurvivalIslands extends JavaPlugin {
 		
         setupPermissions();
         
-		getCommand("SurvivalIsland").setExecutor(CMDManager.getManager());
+        getCommand("SurvivalIsland").setExecutor(CMDManager.getManager());
 		getCommand("SI").setExecutor(CMDManager.getManager());
 		getCommand("SIM").setExecutor(CMDManager.getManager());
 		getCommand("SIR").setExecutor(CMDManager.getManager());
@@ -64,6 +65,7 @@ public class SurvivalIslands extends JavaPlugin {
 		IslandsManager.getManager();
 		ShopConfigManager.getManager();
 		ShopManager.getManager();
+		PickaxeLevelingManager.getManager();
 		
 		PluginManager pm = getServer().getPluginManager();
 		

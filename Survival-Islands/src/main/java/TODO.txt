@@ -1,7 +1,7 @@
 Todo:
 
-- Buy/Sell
-- Nightvision as long as the player is beneath 5 blocks of the original spawnpoint
+- Buy/Sell [DONE]
+- Nightvision as long as the player is beneath 5 blocks of the original spawnpoint [DONE]
 - Stone regeneration when the item 'Regenerate Stone' is buyed for a specific money price.
 - Pickaxe leveling.
 - Island Level.
