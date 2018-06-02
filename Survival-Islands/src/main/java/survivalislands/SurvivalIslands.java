@@ -30,7 +30,8 @@ public class SurvivalIslands extends JavaPlugin {
 	private static final Logger log = Logger.getLogger("Minecraft");
 	private static Economy econ = null;
     private static Permission perms = null;
-	
+    private static boolean permsActive = false;
+    
 	@Override
 	public void onEnable() {
 		instance = this;
@@ -50,9 +51,9 @@ public class SurvivalIslands extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+		setupPermissions();
+		permsActive = perms.hasGroupSupport();
 		
-        setupPermissions();
-        
         getCommand("SurvivalIsland").setExecutor(CMDManager.getManager());
 		getCommand("SI").setExecutor(CMDManager.getManager());
 		getCommand("SIM").setExecutor(CMDManager.getManager());
@@ -100,7 +101,7 @@ public class SurvivalIslands extends JavaPlugin {
     private boolean setupPermissions() {
         RegisteredServiceProvider<Permission> rsp = getServer().getServicesManager().getRegistration(Permission.class);
         perms = rsp.getProvider();
-        return perms != null;
+        return (perms != null);
     }
 	
 	@Override
@@ -129,4 +130,8 @@ public class SurvivalIslands extends JavaPlugin {
     public static Permission getPermissions() {
         return perms;
     }
+
+	public static boolean isPermissionsActive() {
+		return permsActive;
+	}
 }

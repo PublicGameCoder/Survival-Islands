@@ -4,12 +4,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.primesoft.asyncworldedit.AsyncWorldEditBukkit;
 import org.primesoft.asyncworldedit.api.blockPlacer.IBlockPlacer;
@@ -39,18 +42,23 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardWriter;
 import com.sk89q.worldedit.function.mask.ExistingBlockMask;
 import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
 import com.sk89q.worldedit.function.operation.Operations;
+import com.sk89q.worldedit.patterns.Pattern;
+import com.sk89q.worldedit.patterns.SingleBlockPattern;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.CylinderRegion;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.registry.WorldData;
 
+import managers.ConfigManager;
 import managers.IslandsManager;
 import managers.PasteAction;
 import managers.PlayerStatsManager;
 import net.citizensnpcs.api.event.DespawnReason;
+import utilities.ValuedMaterial;
 import utilities.chatUtil;
 
-public class PlayerIsland {
+@SuppressWarnings("deprecation")
+public class PlayerIsland{
 	
 	private UUID ownerUUID;
 	private Location center;
@@ -58,6 +66,7 @@ public class PlayerIsland {
 	private WorkerNPC wnpc;
 	private String islandGenerateJobName;
 	private boolean _isGenerated;
+	private float islandLevel;
 	
 	public PlayerIsland(Player p, Location spawnLocation, Location npcLocation) {
 		this.ownerUUID = p.getUniqueId();
@@ -66,6 +75,7 @@ public class PlayerIsland {
 		this.wnpc = new WorkerNPC(this);
 		this._isGenerated = false;
 		this.islandGenerateJobName = "GenIsland_"+p.getName();
+		islandLevel = 0;
 	}
 	
 	public void unloadIsland() {
@@ -179,17 +189,74 @@ public class PlayerIsland {
 								chatUtil.sendMessage(p, ChatColor.GREEN+"Entering island..", true);
 								homing(p);
 							}
+							countLevel();
 						}
 					}
 				};
-                
                 job.addStateChangedListener(listener);
             }
         });
         
 		IFuncParamEx<Integer, ICancelabeEditSession, MaxChangedBlocksException> action = (IFuncParamEx<Integer, ICancelabeEditSession, MaxChangedBlocksException>) new PasteAction(weWorld, to, file);
-        
         iPlacer.performAsAsyncJob(destination, iEntry, islandGenerateJobName, action);
+        
+        Vector centervector = new Vector(center.getX(), center.getY(), center.getZ());
+		CylinderRegion region = new CylinderRegion(centervector, new Vector2D(21, 21), 60, 254);
+		
+		World _weWorld = new BukkitWorld(center.getWorld());
+        Vector pos1 = region.getMinimumPoint();
+        Vector pos2 = region.getMaximumPoint();
+        privateCubiodRegion = new CuboidRegion(_weWorld, pos1, pos2);
+        
+        IAsyncEditSessionFactory Pifactory = (IAsyncEditSessionFactory) WorldEdit.getInstance().getEditSessionFactory();
+        privateEditSession = Pifactory.getThreadSafeEditSession(_weWorld, -1);
+	}
+	
+	private CuboidRegion privateCubiodRegion;
+	private IThreadSafeEditSession privateEditSession;
+	public void countLevel() {
+        HashSet<BaseBlock> hash = null;
+        Set<BaseBlock> set = null;
+        
+        float totalLvl = 0;
+        for (ValuedMaterial valuedMat : ConfigManager.getManager().getValuedMaterials()) {
+	        hash = new HashSet<BaseBlock>();
+	        hash.add(new BaseBlock(valuedMat.getMaterial().getId()));
+	        set = hash;
+	        totalLvl += (privateEditSession.countBlocks(privateCubiodRegion, set) * valuedMat.getLevelValue());
+        }
+        islandLevel = totalLvl;
+	}
+	
+	private void regenLayer(Location layerLoc, int layerCompression) {
+    	Player p = getPlayer();
+		if (p != null) {
+			Location playerLoc = p.getLocation().clone();
+			if (playerLoc.getWorld().getName().equalsIgnoreCase(layerLoc.getWorld().getName())
+				&& playerLoc.getBlockY() <= layerLoc.getBlockY()
+				&& playerLoc.getBlockY() >= layerLoc.clone().subtract(0, layerCompression + 2, 0).getBlockY()) {
+				homing(p);
+			}
+		}
+		//layerLoc = center of bottom layer to regenerate.
+		//layerCompression = how much blocks need to be generated in total from bottom to upwards.
+		
+		org.bukkit.util.Vector originVector = layerLoc.toVector();
+        Vector to = new Vector(originVector.getX(),originVector.getY(),originVector.getZ());
+        
+        BukkitWorld weWorld = new BukkitWorld(layerLoc.getWorld());
+        
+        IAsyncEditSessionFactory ifactory = (IAsyncEditSessionFactory) WorldEdit.getInstance().getEditSessionFactory();
+        IThreadSafeEditSession destination = ifactory.getThreadSafeEditSession(weWorld, -1);
+        
+        BaseBlock blocktype = new BaseBlock(Material.STONE.getId());
+        Pattern pattern = new SingleBlockPattern(blocktype);
+        
+        try {
+			destination.makeCylinder(to, pattern, 20, layerCompression, true);
+		} catch (MaxChangedBlocksException e) {
+			//e.printStackTrace();
+		}
 	}
 
 	public Player getPlayer() {
@@ -220,5 +287,28 @@ public class PlayerIsland {
 		}else {
 			chatUtil.sendMessage(p, "The island isn't generated yet!", true);
 		}
+	}
+
+	public void regenLayers(boolean[] selected, int layerCompression) {
+		Location startLoc = getSpawnLocation().clone();
+		startLoc.setY(startLoc.getY() - 3);
+		//=============================================
+		
+		for (int layer = 1; layer <= selected.length; layer++) {
+			Location layerLoc = startLoc.clone();
+			layerLoc.subtract(0, layer * layerCompression, 0);
+			if (selected[layer-1]) {
+				regenLayer(layerLoc, layerCompression);
+			}
+		}
+		
+	}
+
+	public int getIslandLevel() {
+		return (int) this.islandLevel;
+	}
+	
+	public float getRawIslandLevel() {
+		return this.islandLevel;
 	}
 }

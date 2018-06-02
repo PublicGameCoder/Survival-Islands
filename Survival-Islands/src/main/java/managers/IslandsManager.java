@@ -9,7 +9,9 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -28,7 +30,7 @@ public class IslandsManager implements Listener {
 	private int spacing = 1;
 	private int diameter = 21;
 	private int YValue = 100;
-	private int swapLength = 2;
+	private int swapLength = 20;
 	
 	private Location lobbySpawn;
 	
@@ -42,13 +44,15 @@ public class IslandsManager implements Listener {
 	private IslandsManager() {
 		islands = new ArrayList<PlayerIsland>();
 		
+		padding = ConfigManager.getManager().getPadding();
+		
 		lobbySpawn = Bukkit.getWorlds().get(0).getSpawnLocation();
 		
 		SurvivalIslands.getInstance().getServer().getPluginManager().registerEvents(this, SurvivalIslands.getInstance());
 		
 		final PotionEffect nightvision = new PotionEffect(PotionEffectType.NIGHT_VISION, 999999, 1);
 		
-		new BukkitRunnable() {
+new BukkitRunnable() {
 			
 			@Override
 			public void run() {
@@ -65,9 +69,25 @@ public class IslandsManager implements Listener {
 					}else {
 						p.removePotionEffect(PotionEffectType.NIGHT_VISION);
 					}
+					
+					if (playerIsland.isGenerated()) {
+						playerIsland.countLevel();
+					}
 				}
 			}
 		}.runTaskTimer(SurvivalIslands.getInstance(), 0, 20);
+		
+		new BukkitRunnable() {
+			
+			@Override
+			public void run() {
+				for (PlayerIsland playerIsland : islands) {					
+					if (playerIsland.isGenerated()) {
+						playerIsland.countLevel();
+					}
+				}
+			}
+		}.runTaskTimer(SurvivalIslands.getInstance(), 0, 100);
 	}
 	
 	public boolean loadIsland(Player p, boolean forceEnter) {
@@ -154,6 +174,27 @@ public class IslandsManager implements Listener {
 			playerIsland.unloadIsland();
 		}
 		islands = new ArrayList<PlayerIsland>();
+	}
+	
+	@EventHandler
+	public void onChat(AsyncPlayerChatEvent e) {
+		PlayerIsland island = getIslandOf(e.getPlayer());
+		String level = "";
+		String group = "";
+		
+		if (island != null && island.isGenerated()) {
+			level = "&8[&7Lvl "+island.getIslandLevel()+"&8] ";
+		}
+		
+		if (SurvivalIslands.isPermissionsActive()) {
+			group = "&8[&7"+SurvivalIslands.getPermissions().getPrimaryGroup(e.getPlayer())+"&8] ";
+		}
+		
+		String player = e.getPlayer().getDisplayName();
+		String message = e.getMessage();
+		e.setCancelled(true);
+		e.setMessage("");
+		Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', level+group+"&7"+player+"&8: &7")+message);
 	}
 	
 	public Location getLobbyLocation() {

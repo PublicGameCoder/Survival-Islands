@@ -203,6 +203,11 @@ public class ShopManager implements Listener{
 		p.openInventory(Shop_Main);
 	}
 	
+	public void openRegenShop(Player player) {
+		Transaction transaction = new Transaction(TransactionType.BUYLAYERREGEN, player, null, null);
+		pending.add(transaction);
+	}
+	
 	public void reload() {
 		ShopConfigManager.getManager().reloadShops();
 		loadShopCategories();
@@ -216,7 +221,7 @@ public class ShopManager implements Listener{
 		Player player = (Player) e.getWhoClicked();
 		e.setCancelled(true);
 		
-		
+		if (!item.hasItemMeta() || !item.getItemMeta().hasDisplayName())return;
 		if (item.getItemMeta().getDisplayName().equalsIgnoreCase(backToNPCMenu.getItemMeta().getDisplayName())) {
 			IslandsManager.getManager().openIslandManager(player);
 		}
@@ -266,10 +271,10 @@ public class ShopManager implements Listener{
 			if (item.getItemMeta().toString().equalsIgnoreCase(shopItem.getItemMeta().toString())) {
 				ClickType clickType = e.getClick();
 				if (clickType == ClickType.LEFT) {
-					Transaction transaction = new Transaction(TransactionType.BUY, player, shopItem, e.getInventory());
+					Transaction transaction = new Transaction(TransactionType.BUYITEM, player, shopItem, e.getInventory());
 					this.pending.add(transaction);
 				}else if (clickType == ClickType.RIGHT) {
-					Transaction transaction = new Transaction(TransactionType.SELL, player, shopItem, e.getInventory());
+					Transaction transaction = new Transaction(TransactionType.SELLITEM, player, shopItem, e.getInventory());
 					this.pending.add(transaction);
 				}
 				break;

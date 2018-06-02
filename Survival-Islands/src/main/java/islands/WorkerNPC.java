@@ -1,6 +1,8 @@
 package islands;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.bukkit.Bukkit;
@@ -11,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -21,6 +24,7 @@ import net.citizensnpcs.api.event.DespawnReason;
 import net.citizensnpcs.api.event.NPCRightClickEvent;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
+import net.milkbowl.vault.economy.Economy;
 import survivalislands.SurvivalIslands;
 
 public class WorkerNPC implements Listener {
@@ -30,7 +34,9 @@ public class WorkerNPC implements Listener {
 	private Map<Selection, ItemStack> selections;
 	
 	public enum Selection {
-		SHOP
+		SHOP,
+		STONEREGEN,
+		INFO
 	}
 	
 	public WorkerNPC(PlayerIsland island) {
@@ -56,15 +62,50 @@ public class WorkerNPC implements Listener {
 		shopItem.setItemMeta(meta);
 		
 		selections.put(Selection.SHOP, shopItem);
+		
+		//StoneRegenItem
+		ItemStack stoneRegenItem = new ItemStack(Material.STONE,1);
+		meta = stoneRegenItem.getItemMeta();
+		meta.setDisplayName(ChatColor.GOLD+"Regenerate");
+		List<String> lores = new ArrayList<String>();
+		
+		lores.add("");
+		lores.add(ChatColor.translateAlternateColorCodes('&', "&7Buy to regenerate specific layer(s) on your island!"));
+		lores.add("");
+		
+		meta.setLore(lores);
+		stoneRegenItem.setItemMeta(meta);
+		
+		selections.put(Selection.STONEREGEN, stoneRegenItem);
+		
+		//IslandInfo
+		ItemStack islandInfo = new ItemStack(Material.BOOK,1);
+		meta = islandInfo.getItemMeta();
+		meta.setDisplayName(ChatColor.GOLD+"Info");
+		lores = new ArrayList<String>();
+		
+		lores.add("");
+		lores.add(ChatColor.translateAlternateColorCodes('&', "&7Level:&6 "+getIsland().getIslandLevel()));
+		lores.add("");
+		
+		meta.setLore(lores);
+		islandInfo.setItemMeta(meta);
+		
+		selections.put(Selection.INFO, islandInfo);
 	}
 
 	private void setupGUIs() {
 		GUI_Main = Bukkit.createInventory(null, 1 * 9, "Manager");
 		GUI_Main.setItem(1, getSelection(Selection.SHOP));
+		GUI_Main.setItem(7, getSelection(Selection.STONEREGEN));
+		GUI_Main.setItem(4, getSelection(Selection.INFO));
 	}
 
 	private ItemStack getSelection(Selection shop) {
 		return selections.get(shop);
+	}
+	private void setSelection(Selection shop, ItemStack item) {
+		selections.replace(shop, item);
 	}
 
 	public boolean spawn() {
@@ -78,6 +119,36 @@ public class WorkerNPC implements Listener {
 		return success;
 	}
 	
+	@EventHandler
+	public void onGUIOpen(InventoryOpenEvent e) {
+		if (e.getInventory() == null || !e.getInventory().getTitle().equals(GUI_Main.getTitle()))return;
+		update();
+	}
+	
+	private void update() {
+		Player player = getIsland().getPlayer();
+		List<String> lores = new ArrayList<String>();
+		
+		
+		//Update Info
+		ItemStack info = getSelection(Selection.INFO);
+		ItemMeta meta = info.getItemMeta();
+		lores = new ArrayList<String>();
+		
+		lores.add("");
+		lores.add(ChatColor.translateAlternateColorCodes('&', "&7Owner:&6 "+player.getName()));
+		lores.add("");
+		Economy econ = SurvivalIslands.getEconomy();
+		lores.add(ChatColor.translateAlternateColorCodes('&', "&7Your balance:&6 "+econ.getBalance(player)));
+		lores.add("");
+		lores.add(ChatColor.translateAlternateColorCodes('&', "&7Island level:&6 "+getIsland().getIslandLevel()));
+		lores.add("");
+		meta.setLore(lores);
+		info.setItemMeta(meta);
+		setSelection(Selection.INFO, info);
+		GUI_Main.setItem(4, getSelection(Selection.INFO));
+	}
+
 	@EventHandler
 	public void onRightClick(NPCRightClickEvent e) {
 		if (getIsland() == null || getIsland().getPlayer() == null ||!e.getClicker().getName().equalsIgnoreCase(getIsland().getPlayer().getName()) || e.getNPC().getId() != npc.getId())return;
@@ -99,6 +170,10 @@ public class WorkerNPC implements Listener {
 		
 		if (item.equals(getSelection(Selection.SHOP))) {
 			ShopManager.getManager().openShop(player);
+		}
+		
+		if (item.equals(getSelection(Selection.STONEREGEN))) {
+			ShopManager.getManager().openRegenShop(player);
 		}
 	}
 	
