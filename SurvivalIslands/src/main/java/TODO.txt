@@ -1,0 +1,24 @@
+Todo:
+
+- Buy/Sell [DONE]
+- Nightvision as long as the player is beneath 5 blocks of the original spawnpoint [DONE]
+- Stone regeneration when the item 'Regenerate Stone' is buyed for a specific money price. [DONE]
+- Pickaxe leveling.
+- Island Level.
+
+Pickaxe leveling:
+
+	Wood: max lvl 3.
+	Stone: max lvl 5.
+	Iron: max lvl 10.
+	Gold: max lvl 25.
+	Diamond: max lvl 50.
+	
+	Resources determined on how much procentage the pickaxe has by its level.
+	
+
+Island Level:
+
+	It would show the players island level based on the blocks they have placed on their island and how many levels the blocks give off.
+	For example, if a coal block gives off 5 levels (defined in the config) and the player places 3 coal blocks he would become Level 15 on his island,
+	and then it would show this when he types in chat - [Lvl. 15] [Member](if he is in a group with a prefix) star_biker > Hi
